@@ -1,0 +1,25 @@
+<?
+$MESS["NUMBER"] = "Номер";
+$MESS["DATE"] = "Дата";
+$MESS["TRACKING"] = "Трек";
+$MESS["TYPE_PAY"] = "Тип оплаты";
+$MESS["TYPE_USER"] = "Создатель заявки";
+$MESS["SUMM"] = "Сумма/руб.";
+$MESS["WEIGHT"] = "Вес";
+$MESS["RECIPIENT"] = "Получатель";
+$MESS["SENDER"] = "Отправитель";
+$MESS["INSTR"] = "Инструкции";
+$MESS["CITY"] = "Город";
+$MESS["ADRESS"] = "Адрес";
+$MESS["PHONE"] = "Телефон";
+$MESS["CLOSE"] = "Закрыть";
+$MESS["DATA_RECIPIENT"] = "Данные получателя";
+$MESS["CLOSE"] = "Закрыть";
+$MESS["INSTR_COURIER"] = "Инстукции курьеру";
+$MESS["CLOSE"] = "Закрыть";
+$MESS["CHECK"] = "Кассовый чек";
+$MESS["CLOSE"] = "Закрыть";
+$MESS["THEAD"] = "Список заявок";
+$MESS["DATA_SENDER"] = "Данные отправителя";
+$MESS["NUMBER_TRACKING"] = "Номер трека";
+$MESS["REAL_STATE"]="Статус отправления";
