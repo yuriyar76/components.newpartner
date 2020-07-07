@@ -24,7 +24,7 @@ use Bitrix\Main\Localization\Loc;
     <div class="card-body">
         <div class="table-responsive">
             <form id="dataTable_form" action="/tools/change_user_fl.php?default=Y&sender_add=Y" method="post">
-            <table class="table table-bordered" id="dataTable" >
+            <table class="table table-bordered" id="dataTableS">
                 <thead>
                 <tr>
                     <th><?= Loc::getMessage("FIO_SENDER") ?></th>
@@ -47,14 +47,14 @@ use Bitrix\Main\Localization\Loc;
                 </tfoot>
                 <tbody >
                 <?php foreach($arResult['LIST'] as $key=>$value):?>
-                    <tr>
-                        <td><?=$value['NAME']?></td>
-                        <td>
-                            <?=$value['PROPERTIES']['PHONE']['VALUE'];?>
-                        </td>
-                        <td>
-                            <?=$value['PROPERTIES']['ADRESS']['VALUE'];?>
-                        </td>
+                <tr>
+                    <td><?=$value['NAME']?></td>
+                    <td>
+                        <?=$value['PROPERTIES']['PHONE']['VALUE'];?>
+                    </td>
+                    <td>
+                        <?=$value['PROPERTIES']['ADRESS']['VALUE'];?>
+                    </td>
                         <td class="d-flex flex-row justify-content-center">
                             <div>
                                 <input id="radio_<?=$key?>" type="radio" name="DEFAULT"
@@ -63,19 +63,100 @@ use Bitrix\Main\Localization\Loc;
                                          echo " checked='checked'";
                                              }
                                         ?>>
-                                <?php if($value['PROPERTIES']['DEFAULT']['VALUE']==1):?>
-                                <input type="hidden" name="ID_OLD" value="<?=$value['ID']?>">
-                                <?php endif;?>
+
                                 <input type="hidden" name="ID_<?=$key?>" value="<?=$value['ID']?>">
                             </div>
-                        </td>
-                        <td>
-                            <i style="color:#0f6fe5; font-size: 20px;" class="fas fa-edit"></i>
-                        </td>
-                        <td>
-                            <i style="color:#710404; font-size: 20px;" class="fas fa-trash-alt"></i>
-                        </td>
-                    </tr>
+                       </td>
+                       <td>
+                            <i data-toggle="modal" data-target="#editBtn_<?=$value['ID']?>" style="color:#0f6fe5;
+                            font-size: 20px; cursor:pointer" class="fas fa-edit"></i>
+                            <!-- Modal -->
+                            <div class="modal fade form-edit" data-backdrop="static" id="editBtn_<?=$value['ID']?>" tabindex="-1"
+                                 role="dialog" aria-labelledby="editBtn_<?=$value['ID']?> " aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Изменение данных отправителя <?=$value['NAME']?></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="InputFIO_<?=$value['ID']?>">ФИО Отправителя <span style="color:red">*</span>  </label>
+                    <input required name="InputFIO_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>" value="<?=$value['NAME']?>" type="text" class="form-control"
+                           id="InputFIO_<?=$value['ID']?>">
+                </div>
+                <div class="form-group">
+                    <label for="InputPhone_<?=$value['ID']?>">Телефон отправителя <span style="color:red">*</span></label>
+                    <input required name="InputPhone_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>" value="<?=$value['PROPERTIES']['PHONE']['VALUE'];?>" type="text"
+                           class="form-control" id="InputPhone_<?=$value['ID']?>">
+                </div>
+                <div class="form-group">
+                    <label for="InputAdr_<?=$value['ID']?>">Адрес отправителя <span style="color:red">*</span></label>
+                    <input required name="InputAdr_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>" value="<?=$value['PROPERTIES']['ADRESS']['VALUE'];?>"
+                           type="text" class="form-control" id="InputAdr_<?=$value['ID']?>">
+                </div>
+                <input id="form_submit_<?=$value['ID']?>" style="visibility: hidden" form="form-edit_<?=$value["ID"]?>" type="submit">
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" data-dismiss="modal" class="btn btn-secondary btn-icon-split">
+                    <span class="icon text-white-50">
+                      <i class="fas fa-times-circle"></i>
+                    </span>
+                    <span class="text">Закрыть</span>
+                </button>
+                <button  onclick="return editItem('form-edit_<?=$value["ID"]?>', 'form_submit_<?=$value["ID"]?>')"
+                         type="button"  class="btn btn-success btn-icon-split">
+                    <span  class="icon text-white-50">
+                      <i class="far fa-check-circle"></i>
+                    </span>
+                    <span class="text">Изменить</span>
+                </button>
+            </div>
+            <form id="form-edit_<?=$value["ID"]?>" method="post" action="/tools/change_user_fl.php?edit=Y">
+                <?=bitrix_sessid_post()?>
+                <input name="ID_<?=$value['ID']?>" value="<?=$value['ID']?>" type="hidden">
+            </form>
+        </div>
+    </div>
+                    </div>
+                </td>
+                <td>
+                    <i data-toggle="modal" data-target="#trashBtn_<?=$value['ID']?>"
+                       style="color:#710404; font-size: 20px; cursor:pointer" class="fas fa-trash-alt"></i>
+                    <!-- Modal -->
+                    <div class="modal fade form-del" data-backdrop="static" id="trashBtn_<?=$value['ID']?>" tabindex="-1"
+                         role="dialog" aria-labelledby="trashBtn" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                 <div class="modal-body">
+                                    <h2 style="color:#840707">Удалить?</h2>
+                                     <small>Отправитель <?=$value['NAME']?> будет удален из справочника</small>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" data-dismiss="modal" class="btn btn-secondary btn-icon-split">
+                                        <span class="icon text-white-50">
+                                          <i class="fas fa-times-circle"></i>
+                                        </span>
+                                        <span class="text">Не удалять</span>
+                                    </button>
+                                       <button  onclick="return delItem('<?=$value['ID']?>', '<?=bitrix_sessid()?>')"
+                                               type="button"  class="btn btn-danger btn-icon-split">
+                                        <span  class="icon text-white-50">
+                                          <i class="fas fa-trash-alt"></i>
+                                        </span>
+                                            <span class="text">Удалить</span>
+                                        </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                </tr>
                 <?php endforeach;?>
                 </tbody>
             </table>
@@ -84,5 +165,6 @@ use Bitrix\Main\Localization\Loc;
         </div>
     </div>
 </div>
+
 
 

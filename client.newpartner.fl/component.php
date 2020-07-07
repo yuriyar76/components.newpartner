@@ -1,8 +1,8 @@
 <?php
-declare(strict_types=1);
 if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true)
     die();
 use Bitrix\Main\Localization\Loc;
+require_once __DIR__.'/functions.php';
 $sessid = bitrix_sessid();
 $component_id = 113;
 include_once($_SERVER['DOCUMENT_ROOT']."/bitrix/components/black_mist/delivery.packages/functions.php");
@@ -15,10 +15,12 @@ if($id_user && $USER->Authorize($id_user) ){
       'name' =>   $USER->GetFirstName(),
       'lastName' => $USER->GetLastName(),
       'phone' =>  $arrUsr[0]['PERSONAL_PHONE'],
-      'address' => $arrUsr[0]['PERSONAL_STREET']
+      'adress' => $arrUsr[0]['PERSONAL_STREET']
     ];
     $arResult['USER'] = $USER_CURRENT;
+    //dump($arResult);
     $_SESSION['form_mail'] =  trim($USER_CURRENT['email']);
+    $_SESSION['user_current'] =   $USER_CURRENT;
 
     /* запрос в 1с за треком отправления */
     if($_GET['number']){
@@ -52,16 +54,105 @@ if($id_user && $USER->Authorize($id_user) ){
         echo json_encode($request);
         exit;
     }
+    /* удаление записи в таблице Отправители - получатели */
+    if($_GET['delete']==='Y') {
+        if($_POST['sess_id'] === $sessid){
+            $id_item = (int)$_POST['id'];
+            $el = new CIBlockElement;
+            if($el->Update($id_item, ['ACTIVE'=>"N"])){
+                $req = iconv('windows-1251', 'utf-8', "ok");
+                $request = [
+                    'mess' => $req,
+                    "change"=>1
+                ];
+             }else{
+                $req = iconv('windows-1251', 'utf-8', "no");
+                $request = [
+                    'messerr' => $req,
+                    "change"=>0
+                ];
+            }
+            echo json_encode($request);
+            exit;
+        }
+            exit;
 
+     }
+    /* изменение справочника отправители-получатели */
+    if($_GET['edit']==='Y'){
+
+        if(!empty($_POST['form_data'])&&$_POST['form_data'][3]['value']===$sessid){
+            foreach($_POST['form_data'] as $key=>$value){
+                $key_arr = preg_replace('/_[0-9]+$/','',$_POST['form_data'][$key]['name']);
+                $arResult[$key_arr] = trim(htmlspecialcharsEx($value['value']));
+            }
+            $arResult = arFromUtfToWin($arResult);
+            $id_item = (int)$arResult['ID'];
+            $el = new CIBlockElement;
+            if(!empty($arResult['InputFIO'])){
+                $el->Update($id_item, ['NAME'=>$arResult['InputFIO']]);
+                if(!empty($arResult['InputAdr'])){
+                        $adr_new = $arResult['InputAdr'];
+                    if(!empty($arResult['InputPhone'])){
+                        $phone_new = $arResult['InputPhone'];
+                        $arrUpdate = [
+                            969 => $phone_new,
+                            971 => $adr_new
+                        ];
+                        CIBlockElement::SetPropertyValuesEx($id_item, 114, $arrUpdate);
+                        $req =  iconv('windows-1251', 'utf-8',
+                            "Успешно внесены изменения в справочник.");
+                        $request = [
+                            'mess' => $req,
+                            "change"=>1
+                        ];
+                        echo json_encode($request);
+                        exit;
+                    }else{
+                        $req =  iconv('windows-1251', 'utf-8',
+                            "Не заполнено обязательное поле Телефон");
+                        $request = [
+                            'messerr' => $req,
+                            "change"=>0
+                        ];
+                    }
+                }else{
+                    $req =  iconv('windows-1251', 'utf-8',
+                        "Не заполнено обязательное поле Адрес");
+                    $request = [
+                        'messerr' => $req,
+                        "change"=>0
+                    ];
+                }
+            }else{
+                $req =  iconv('windows-1251', 'utf-8',
+                    "Не заполнено обязательное поле ФИО");
+                $request = [
+                    'messerr' => $req,
+                    "change"=>0
+                ];
+            }
+        }
+        $req =  iconv('windows-1251', 'utf-8',
+            "Общая ошибка");
+        $request = [
+            'messerr' => $req,
+            "change"=>0
+        ];
+        echo json_encode($request);
+        exit;
+
+    }
     /* изменение профиля пользователя */
     if($_GET['change']==$id_user){
         if(!empty($_POST['form_data'])&&$_POST['form_data'][0]['value']==$sessid){
             foreach($_POST['form_data'] as $key=>$value){
+
                 $arResult[$_POST['form_data'][$key]['name']] = trim(htmlspecialcharsEx($value['value']));
             }
             $arResult = arFromUtfToWin($arResult);
-            //dump($arResult);
-            //exit;
+           /* dump($arResult);
+            exit;*/
             if($arResult['NAME'] && $arResult['EMAIL']){
                 $user_up = new CUser;
                 if(!empty($arResult['PASSWORD'])&&!empty($arResult['CONFIRM_PASSWORD'])&&!empty($arResult['EMAIL'])){
@@ -71,6 +162,7 @@ if($id_user && $USER->Authorize($id_user) ){
                         if (!empty($passwordErrors)){
                             echo json_encode(["MESSAGE_ERROR"=>"Invalid password format!"]);
                         }
+
                         $fields = [
                             "EMAIL"   => $arResult['EMAIL'],
                             'PASSWORD'=>$arResult['PASSWORD'],
@@ -88,8 +180,8 @@ if($id_user && $USER->Authorize($id_user) ){
                     "LID"               => "ru",
                     "ACTIVE"            => "Y",
                     "GROUP_ID"          => [3,29],
-                    "PERSONAL_PHONE"  => (string)$arResult['PERSONAL_PHONE'],
-                    "PERSONAL_STREET"  => $arResult['PERSONAL_STREET']
+                    "PERSONAL_PHONE"    => (string)$arResult['PERSONAL_PHONE'],
+                    "PERSONAL_STREET"   => (string)$arResult['PERSONAL_STREET']
                 ];
                  $user_up->Update($id_user, $fields, false);
                 if($user_up->LAST_ERROR){
@@ -106,10 +198,8 @@ if($id_user && $USER->Authorize($id_user) ){
                         "mess"=>$req,
                         "change"=>1
                     ];
-
                 }
             }else{
-
                 $req =  iconv('windows-1251', 'utf-8','Поля обязательные к заполнению - Имя и EMAIL!');
                 $request = [
                     'messerr' => $req,
@@ -120,7 +210,106 @@ if($id_user && $USER->Authorize($id_user) ){
             exit;
          }
     }
+    /* отправитель-получатель по умолчанию */
+    if($_GET['default'] === "Y" && ($_GET['sender_add']==='Y' || $_GET['recipient_add']==='Y')){
+        $id_item = 0;
+        $type = 0;
+        if($_GET['sender_add']==='Y'){
+            $type = 414;
+        }
+        if($_GET['recipient_add']==='Y'){
+            $type = 415;
+        }
+        foreach($_POST['form_data'] as $key=>$value){
+            if($id_item>0)break;
+            $_POST['form_data'][$key]['name'] = trim(htmlspecialcharsEx($value['name']));
+            $_POST['form_data'][$key]['value'] = trim(htmlspecialcharsEx($value['value']));
+            if($value['name'] === 'DEFAULT' && ($value['value'] === 'on' || $value['value'] === '1') ){
+                $id_item = $_POST['form_data'][++$key]['value'];
+            }
+        }
+        /* снять отметку default если есть */
+        $arFilter = [
+            'PROPERTY_966' => $id_user,
+            'ACTIVE' => 'Y',
+            'PROPERTY_972' => '1',
+            'PROPERTY_967' => $type,
+        ];
+        $arSelect = [
+            "NAME",
+            "DATE_CREATE",
+            "IBLOCK_ID",
+            "ID",
+            "PROPERTY_*",
+        ];
 
+        $arList = GetInfoArr(false, false, 114, $arSelect, $arFilter, false );
+        foreach($arList as $key=>$value){
+            $id_old = (int)$arList[$key]['ID'];
+            if($id_old>0) {
+                CIBlockElement::SetPropertyValuesEx($id_old, 114,
+                    [
+                        972 => 0
+                    ]
+                );
+            }
+        }
+
+        if($id_item>0) {
+            CIBlockElement::SetPropertyValuesEx($id_item, 114,
+                [
+                    972 => 1
+                ]
+            );
+        }
+        exit;
+    }
+    /* добавление нового отправителя-получателя*/
+    if(($_GET['sender_add']==='Y' || $_GET['recipient_add']==='Y') && $_GET['newsender'] == $id_user){
+        if(!empty($_POST['form_data']) && $_POST['form_data'][0]['value'] === $sessid){
+            $type = 0;
+            if($_GET['sender_add']==='Y')$type = 414;
+            if($_GET['recipient_add']==='Y')$type = 415;
+             foreach($_POST['form_data'] as $key=>$value){
+                $arResult[$_POST['form_data'][$key]['name']] = trim(htmlspecialcharsEx($value['value']));
+            }
+            $arResult = arFromUtfToWin($arResult);
+            $property = [
+                966 => $id_user,
+                967 => $type,
+                969 => $arResult['PHONE'],
+                971 => $arResult['ADRESS'],
+
+            ];
+            $arLoadArray = [
+                "IBLOCK_ID" => 114,
+                "NAME"  => $arResult['NAME'],
+                "ACTIVE" => "Y",
+                "PROPERTY_VALUES"=> $property,
+            ];
+            $el = new CIBlockElement;
+            $id_sender = $el->Add($arLoadArray);
+
+            if( $id_sender){
+                $req =  iconv('windows-1251', 'utf-8',
+                    Loc::getMessage('ADD_SENDER'));
+                $request = [
+                    'mess' => $req,
+                    "change"=>1
+                ];
+            }else{
+                $req =  iconv('windows-1251', 'utf-8',
+                    Loc::getMessage('ERR_ADD'));
+                $request = [
+                    'messerr' => $req,
+                    "change"=>0
+                ];
+            }
+            echo json_encode($request);
+            exit;
+        }
+
+    }
     /* блок обработчиков страниц */
     if($_GET['logout']==="Y"){
         $USER->Logout();
@@ -151,110 +340,16 @@ if($id_user && $USER->Authorize($id_user) ){
         $arResult['LIST'] = $arList;
     }
     elseif($_GET['sender_add']==='Y'){
-       if($_GET['default'] === "Y"){
-           $id_item = 0;
-           $id_old = 0;
-
-           foreach($_POST['form_data'] as $key=>$value){
-               if($id_item>0 && $id_old>0)break;
-               $_POST['form_data'][$key]['name'] = trim(htmlspecialcharsEx($value['name']));
-               $_POST['form_data'][$key]['value'] = trim(htmlspecialcharsEx($value['value']));
-               if($value['name'] === 'DEFAULT' && $value['value'] === '1' ){
-                   $id_item = $_POST['form_data'][++$key]['value'];
-
-               }
-               if($value['name'] === 'ID_OLD'){
-                   $id_old = $_POST['form_data'][$key]['value'];
-               }
-
-           }
-
-           if($id_item>0) {
-              CIBlockElement::SetPropertyValuesEx($id_item, 114,
-                   [
-                       972 => 1
-                   ]
-               );
-           }
-           if($id_old>0){
-               CIBlockElement::SetPropertyValuesEx($id_old, 114,
-                   [
-                       972 => 0
-                   ]
-               );
-           }
-
-
-           $_POST['id_item'] = $id_item;
-           $_POST['id_old'] = $id_old;
-           dump($_POST);
-           exit;
-       }
-       if($_GET['newsender'] == $id_user){
-
-            if(!empty($_POST['form_data'])&&$_POST['form_data'][0]['value'] === $sessid){
-                foreach($_POST['form_data'] as $key=>$value){
-                    $arResult[$_POST['form_data'][$key]['name']] = trim(htmlspecialcharsEx($value['value']));
-                }
-                $arResult = arFromUtfToWin($arResult);
-
-                $property = [
-                    966 => $id_user,
-                    967 => 414,
-                    969 => $arResult['PHONE'],
-                    971 => $arResult['ADRESS'],
-
-                ];
-                $arLoadArray = [
-                    "IBLOCK_ID" => 114,
-                    "NAME"  => $arResult['NAME'],
-                    "ACTIVE" => "Y",
-                    "PROPERTY_VALUES"=> $property,
-                ];
-                $el = new CIBlockElement;
-                $id_sender = $el->Add($arLoadArray);
-
-                if( $id_sender){
-                    $req =  iconv('windows-1251', 'utf-8',
-                        Loc::getMessage('ADD_SENDER'));
-                    $request = [
-                        'mess' => $req,
-                        "change"=>1
-                    ];
-                }else{
-                    $req =  iconv('windows-1251', 'utf-8',
-                        Loc::getMessage('ERR_ADD'));
-                    $request = [
-                        'messerr' => $req,
-                        "change"=>0
-                    ];
-                }
-                echo json_encode($request);
-                exit;
-            }
-
-        }
         $arResult['MODE'] = 'sender_list';
-        $arFilter = [
-            'PROPERTY_966' => $id_user,
-            'IBLOCK_ID' => 114,
-            'ACTIVE' => 'Y',
-
-        ];
-        $arSelect = [
-            "NAME",
-            "DATE_CREATE",
-            "IBLOCK_ID",
-            "ID",
-            "PROPERTY_*",
-        ];
-
-        $arList = GetInfoArr(false, false, $component_id, $arSelect, $arFilter, false );
+        $type = 414;
+        $arList = getData($id_user, $type, $component_id);
         $arResult['LIST'] = $arList;
-
     }
     elseif($_GET['recipient_add']==='Y'){
         $arResult['MODE'] = 'recipient_list';
+        $type = 415;
+        $arList = getData($id_user, $type, $component_id);
+        $arResult['LIST'] = $arList;
     }
     else{
         $arResult['MODE'] = 'list';
