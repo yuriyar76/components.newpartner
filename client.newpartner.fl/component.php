@@ -18,10 +18,118 @@ if($id_user && $USER->Authorize($id_user) ){
       'adress' => $arrUsr[0]['PERSONAL_STREET']
     ];
     $arResult['USER'] = $USER_CURRENT;
-    //dump($arResult);
     $_SESSION['form_mail'] =  trim($USER_CURRENT['email']);
     $_SESSION['user_current'] =   $USER_CURRENT;
+    /* массив отправителей дл€ выбора при оформлении новой за€вки*/
+    $arFilter = [
+        'PROPERTY_966' => $id_user,
+        'ACTIVE' => 'Y',
+        'PROPERTY_967' => 414,
+    ];
+    $arSelect = [
+        "NAME",
+        "DATE_CREATE",
+        "IBLOCK_ID",
+        "ID",
+        "PROPERTY_*",
+    ];
 
+    $arList = GetInfoArr(false, false, 114, $arSelect, $arFilter, false );
+     if(!empty($arList)){
+        foreach($arList as $key=>$value){
+            $arResult['SENDERS'][$key] = [
+                "ID"   => $value['ID'],
+                "NAME" => trim($value['NAME']),
+                'PHONE' => $value['PROPERTIES']['PHONE']['VALUE'],
+                'ADRESS' => $value['PROPERTIES']['ADRESS']['VALUE'],
+            ];
+        }
+         $_SESSION['SENDERS'] =   $arResult['SENDERS'];
+    }
+
+    /* массив получателей дл€ выбора при оформлении новой за€вки*/
+    $arFilter = [
+        'PROPERTY_966' => $id_user,
+        'ACTIVE' => 'Y',
+        'PROPERTY_967' => 415,
+    ];
+    $arSelect = [
+        "NAME",
+        "DATE_CREATE",
+        "IBLOCK_ID",
+        "ID",
+        "PROPERTY_*",
+    ];
+
+    $arList = GetInfoArr(false, false, 114, $arSelect, $arFilter, false );
+    if(!empty($arList)){
+        foreach($arList as $key=>$value){
+            $arResult['RECIPIENTS'][$key] = [
+                "ID"   => $value['ID'],
+                "NAME" => trim($value['NAME']),
+                'PHONE' => $value['PROPERTIES']['PHONE']['VALUE'],
+                'ADRESS' => $value['PROPERTIES']['ADRESS']['VALUE'],
+            ];
+        }
+        $_SESSION['RECIPIENTS'] =   $arResult['RECIPIENTS'];
+    }
+
+
+    /* записать отправител€ по умолчанию если есть */
+    $arFilter = [
+        'PROPERTY_966' => $id_user,
+        'ACTIVE' => 'Y',
+        'PROPERTY_972' => '1',
+        'PROPERTY_967' => 414,
+    ];
+    $arSelect = [
+        "NAME",
+        "DATE_CREATE",
+        "IBLOCK_ID",
+        "ID",
+        "PROPERTY_*",
+    ];
+
+    $arList = GetInfoArr(false, false, 114, $arSelect, $arFilter, false );
+    if( !empty($arList[0]['NAME'])){
+        $name_sender = $arList[0]['NAME'];
+        $phone_sender = $arList[0]['PROPERTIES']['PHONE']['VALUE'];
+        $adress_sender = $arList[0]['PROPERTIES']['ADRESS']['VALUE'];
+        $arResult['DEFAULT_SENDER'] = [
+            'NAME' => $name_sender,
+            'PHONE' => $phone_sender,
+            'ADRESS' => $adress_sender
+        ];
+        $_SESSION['DEFAULT_SENDER'] = $arResult['DEFAULT_SENDER'];
+    }
+
+    /* записать получател€ по умолчанию если есть */
+    $arFilter = [
+        'PROPERTY_966' => $id_user,
+        'ACTIVE' => 'Y',
+        'PROPERTY_972' => '1',
+        'PROPERTY_967' => 415,
+    ];
+    $arSelect = [
+        "NAME",
+        "DATE_CREATE",
+        "IBLOCK_ID",
+        "ID",
+        "PROPERTY_*",
+    ];
+
+    $arList = GetInfoArr(false, false, 114, $arSelect, $arFilter, false );
+    if( !empty($arList[0]['NAME'])){
+        $name_recipient = $arList[0]['NAME'];
+        $phone_recipient = $arList[0]['PROPERTIES']['PHONE']['VALUE'];
+        $adress_recipient = $arList[0]['PROPERTIES']['ADRESS']['VALUE'];
+        $arResult['DEFAULT_RECIPIENT'] = [
+            'NAME' => $name_recipient,
+            'PHONE' => $phone_recipient,
+            'ADRESS' => $adress_recipient
+        ];
+        $_SESSION['DEFAULT_RECIPIENT'] = $arResult['DEFAULT_RECIPIENT'];
+    }
     /* запрос в 1с за треком отправлени€ */
     if($_GET['number']){
         $result_pod_arr = [];
@@ -147,13 +255,10 @@ if($id_user && $USER->Authorize($id_user) ){
     if($_GET['change']==$id_user){
         if(!empty($_POST['form_data'])&&$_POST['form_data'][0]['value']==$sessid){
             foreach($_POST['form_data'] as $key=>$value){
-
                 $arResult[$_POST['form_data'][$key]['name']] = trim(htmlspecialcharsEx($value['value']));
             }
             $arResult = arFromUtfToWin($arResult);
-           /* dump($arResult);
-            exit;*/
-            if($arResult['NAME'] && $arResult['EMAIL']){
+              if($arResult['NAME'] && $arResult['EMAIL']){
                 $user_up = new CUser;
                 if(!empty($arResult['PASSWORD'])&&!empty($arResult['CONFIRM_PASSWORD'])&&!empty($arResult['EMAIL'])){
                     if($arResult['PASSWORD']===$arResult['CONFIRM_PASSWORD']){
