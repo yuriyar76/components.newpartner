@@ -9,6 +9,16 @@ include_once($_SERVER['DOCUMENT_ROOT']."/bitrix/components/black_mist/delivery.p
 global $USER;
 $id_user = $USER->GetID();
 if($id_user && $USER->Authorize($id_user) ){
+    function GetCity(&$arList){
+        foreach ($arList as $key=>$value){
+            if(empty($value['PROPERTIES']['CITY']['VALUE'])) continue;
+            $id_city = (int)$value['PROPERTIES']['CITY']['VALUE'];
+            $res = CIBlockElement::GetByID($id_city);
+            $arr_city = $res->Fetch();
+            $arList[$key]['PROPERTIES']['CITY']['NAME'] = $arr_city['NAME'];
+
+        }
+    }
     $arrUsr = UserData($id_user);
     $USER_CURRENT = [
       'email' =>  $USER->GetEmail(),
@@ -188,65 +198,84 @@ if($id_user && $USER->Authorize($id_user) ){
      }
     /* изменение справочника отправители-получатели */
     if($_GET['edit']==='Y'){
-
-        if(!empty($_POST['form_data'])&&$_POST['form_data'][3]['value']===$sessid){
+         if(!empty($_POST['form_data'])&&$_POST['form_data'][6]['value']===$sessid){
+            $id_modal = trim(htmlspecialcharsEx($_POST['form_data'][5]['value']));
             foreach($_POST['form_data'] as $key=>$value){
                 $key_arr = preg_replace('/_[0-9]+$/','',$_POST['form_data'][$key]['name']);
+                $id_modal = 'editBtn_'.preg_replace('/[a-z]+_{1}/i','',$_POST['form_data'][$key]['name']);
                 $arResult[$key_arr] = trim(htmlspecialcharsEx($value['value']));
             }
             $arResult = arFromUtfToWin($arResult);
+
             $id_item = (int)$arResult['ID'];
             $el = new CIBlockElement;
             if(!empty($arResult['InputFIO'])){
                 $el->Update($id_item, ['NAME'=>$arResult['InputFIO']]);
-                if(!empty($arResult['InputAdr'])){
+                if(!empty($arResult['CityId'])) {
+                    $city_new = (int)$arResult['CityId'];
+                     if (!empty($arResult['InputAdr'])) {
                         $adr_new = $arResult['InputAdr'];
-                    if(!empty($arResult['InputPhone'])){
-                        $phone_new = $arResult['InputPhone'];
-                        $arrUpdate = [
-                            969 => $phone_new,
-                            971 => $adr_new
-                        ];
-                        CIBlockElement::SetPropertyValuesEx($id_item, 114, $arrUpdate);
-                        $req =  iconv('windows-1251', 'utf-8',
-                            "Успешно внесены изменения в справочник.");
+                        if (!empty($arResult['InputPhone'])) {
+                            $phone_new = $arResult['InputPhone'];
+                            $arrUpdate = [
+                                969 => $phone_new,
+                                971 => $adr_new,
+                                974 => $city_new
+                            ];
+                            CIBlockElement::SetPropertyValuesEx($id_item, 114, $arrUpdate);
+                            $req = iconv('windows-1251', 'utf-8',
+                                "Успешно внесены изменения в справочник.");
+                            $request = [
+                                'id' => $id_modal,
+                                'mess' => $req,
+                                "change" => 1
+                            ];
+                            echo json_encode($request);
+                            exit;
+                        } else {
+                            $req = iconv('windows-1251', 'utf-8',
+                                "Не заполнено обязательное поле Телефон");
+                            $request = [
+                                'id' => $id_modal,
+                                'messerr' => $req,
+                                "change" => 0
+                            ];
+                        }
+                    } else {
+                        $req = iconv('windows-1251', 'utf-8',
+                            "Не заполнено обязательное поле Адрес");
                         $request = [
-                            'mess' => $req,
-                            "change"=>1
-                        ];
-                        echo json_encode($request);
-                        exit;
-                    }else{
-                        $req =  iconv('windows-1251', 'utf-8',
-                            "Не заполнено обязательное поле Телефон");
-                        $request = [
+                            'id' => $id_modal,
                             'messerr' => $req,
-                            "change"=>0
+                            "change" => 0
                         ];
                     }
-                }else{
-                    $req =  iconv('windows-1251', 'utf-8',
-                        "Не заполнено обязательное поле Адрес");
+                } else {
+                    $req = iconv('windows-1251', 'utf-8',
+                        "Поле Город не заполнено или заполнено не верно");
                     $request = [
+                        'id' => $id_modal,
                         'messerr' => $req,
-                        "change"=>0
+                        "change" => 0
                     ];
                 }
             }else{
                 $req =  iconv('windows-1251', 'utf-8',
                     "Не заполнено обязательное поле ФИО");
                 $request = [
+                    'id' => $id_modal,
                     'messerr' => $req,
                     "change"=>0
                 ];
             }
+        }else{
+            $req =  iconv('windows-1251', 'utf-8',
+                "Общая ошибка");
+            $request = [
+                'messerr' => $req,
+                "change"=>0
+            ];
         }
-        $req =  iconv('windows-1251', 'utf-8',
-            "Общая ошибка");
-        $request = [
-            'messerr' => $req,
-            "change"=>0
-        ];
         echo json_encode($request);
         exit;
 
@@ -379,12 +408,54 @@ if($id_user && $USER->Authorize($id_user) ){
                 $arResult[$_POST['form_data'][$key]['name']] = trim(htmlspecialcharsEx($value['value']));
             }
             $arResult = arFromUtfToWin($arResult);
+            if(!empty($arResult['PHONE'])){
+               if( !preg_match('/[\+?\s?\(?\)?\d-]{10,20}/', $arResult['PHONE'])){
+                   $req =  iconv('windows-1251', 'utf-8',
+                       Loc::getMessage('ERR_ADD_PHONE_V'));
+                   $request = [
+                       'messerr' => $req,
+                       "change"=>0
+                   ];
+                   echo json_encode($request);
+                   exit;
+               }
+            }
+            if(empty($arResult['PHONE'])){
+                $req =  iconv('windows-1251', 'utf-8',
+                    Loc::getMessage('ERR_ADD_PHONE'));
+                $request = [
+                    'messerr' => $req,
+                    "change"=>0
+                ];
+                echo json_encode($request);
+                exit;
+            }
+            if(empty($arResult['ADRESS'])){
+                $req =  iconv('windows-1251', 'utf-8',
+                    Loc::getMessage('ERR_ADD_ADRESS'));
+                $request = [
+                    'messerr' => $req,
+                    "change"=>0
+                ];
+                echo json_encode($request);
+                exit;
+            }
+            if(empty($arResult['CITY_ID'])){
+                $req =  iconv('windows-1251', 'utf-8',
+                    Loc::getMessage('ERR_ADD_CITY'));
+                $request = [
+                    'messerr' => $req,
+                    "change"=>0
+                ];
+                echo json_encode($request);
+                exit;
+            }
             $property = [
                 966 => $id_user,
                 967 => $type,
                 969 => $arResult['PHONE'],
                 971 => $arResult['ADRESS'],
-
+                974 => $arResult['CITY_ID'],
             ];
             $arLoadArray = [
                 "IBLOCK_ID" => 114,
@@ -415,6 +486,31 @@ if($id_user && $USER->Authorize($id_user) ){
         }
 
     }
+   /* выбор данных отправителя-получателя по запросу из новой заявки */
+     if(!empty($_GET['getid'])){
+        $id_el = (int)$_GET['getid'];
+         $arFilter = [];
+         $arSelect = [
+             "NAME",
+             "DATE_CREATE",
+             "IBLOCK_ID",
+             "ID",
+         ];
+         $arList = GetInfoArr(false, $id_el, 114, $arSelect, $arFilter, false );
+         $arRes = convArrayToUTF($arList);
+         $req = [
+             'NAME' => $arList[0]['NAME'],
+             "PHONE" => $arList[0]['PROPERTIES']['PHONE']['VALUE'],
+             "ADRESS" => $arList[0]['PROPERTIES']['ADRESS']['VALUE'],
+             "DEFAULT" => $arList[0]['PROPERTIES']['DEFAULT']['VALUE'],
+             "TYPE_ID" => $arList[0]['PROPERTIES']['TYPE']['VALUE_ENUM_ID'],
+             "TYPE" =>  $arList[0]['PROPERTIES']['TYPE']['VALUE_ENUM'],
+         ];
+         $request = convArrayToUTF($req);
+         echo json_encode($request);
+         exit;
+      }
+   /* --------------------------------------------------------------------------------------------------- */
     /* блок обработчиков страниц */
     if($_GET['logout']==="Y"){
         $USER->Logout();
@@ -444,24 +540,27 @@ if($id_user && $USER->Authorize($id_user) ){
         $arList = GetInfoArr(false, false, $component_id, $arSelect, $arFilter, false );
         $arResult['LIST'] = $arList;
     }
-    elseif($_GET['sender_add']==='Y'){
+    elseif($_GET['sender_add']==='Y'){  /* справочник отправителей */
         $arResult['MODE'] = 'sender_list';
         $type = 414;
         $arList = getData($id_user, $type, $component_id);
+        GetCity($arList);
         $arResult['LIST'] = $arList;
+
     }
-    elseif($_GET['recipient_add']==='Y'){
+    elseif($_GET['recipient_add']==='Y'){  /* справочник получателей */
         $arResult['MODE'] = 'recipient_list';
         $type = 415;
         $arList = getData($id_user, $type, $component_id);
+        GetCity($arList);
         $arResult['LIST'] = $arList;
-    }
+     }
     else{
         $arResult['MODE'] = 'list';
         $arFilter = [
-            'PROPERTY_944' => $id_user,
-            'IBLOCK_ID' => $component_id,
-            'ACTIVE' => 'Y',
+            'PROPERTY_944'  => $id_user,
+            'IBLOCK_ID'     => $component_id,
+            'ACTIVE'        => 'Y',
             '=PROPERTY_965' => false,
         ];
         $arSelect = [

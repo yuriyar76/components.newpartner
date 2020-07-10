@@ -29,6 +29,7 @@ use Bitrix\Main\Localization\Loc;
                 <tr>
                     <th><?= Loc::getMessage("FIO_SENDER") ?></th>
                     <th><?= Loc::getMessage("PHONE_SENDER") ?></th>
+                    <th><?= Loc::getMessage("CITY_SENDER") ?></th>
                     <th><?= Loc::getMessage("ADRESS_SENDER") ?></th>
                     <th><?= Loc::getMessage("DEFAULT") ?></th>
                     <th>Изменить</th>
@@ -39,6 +40,7 @@ use Bitrix\Main\Localization\Loc;
                 <tr>
                     <th><?= Loc::getMessage("FIO_SENDER") ?></th>
                     <th><?= Loc::getMessage("PHONE_SENDER") ?></th>
+                    <th><?= Loc::getMessage("CITY_SENDER") ?></th>
                     <th><?= Loc::getMessage("ADRESS_SENDER") ?></th>
                     <th><?= Loc::getMessage("DEFAULT") ?></th>
                     <th>Изменить</th>
@@ -51,6 +53,9 @@ use Bitrix\Main\Localization\Loc;
                     <td><?=$value['NAME']?></td>
                     <td>
                         <?=$value['PROPERTIES']['PHONE']['VALUE'];?>
+                    </td>
+                    <td>
+                        <?=$value['PROPERTIES']['CITY']['NAME'];?>
                     </td>
                     <td>
                         <?=$value['PROPERTIES']['ADRESS']['VALUE'];?>
@@ -69,12 +74,14 @@ use Bitrix\Main\Localization\Loc;
                        </td>
                        <td>
                             <i data-toggle="modal" data-target="#editBtn_<?=$value['ID']?>" style="color:#0f6fe5;
-                            font-size: 20px; cursor:pointer" class="fas fa-edit"></i>
+                            font-size: 20px; cursor:pointer"
+                               class="fas fa-edit"></i>
                             <!-- Modal -->
-                            <div class="modal fade form-edit" data-backdrop="static" id="editBtn_<?=$value['ID']?>" tabindex="-1"
-                                 role="dialog" aria-labelledby="editBtn_<?=$value['ID']?> " aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+
+    <div class="modal fade form-edit" data-backdrop="static" id="editBtn_<?=$value['ID']?>" tabindex="-1"
+         role="dialog" aria-labelledby="editBtn_<?=$value['ID']?> " aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+             <div class="modal-content">
 
             <div class="modal-header">
                 <h5 class="modal-title">Изменение данных отправителя <?=$value['NAME']?></h5>
@@ -83,22 +90,42 @@ use Bitrix\Main\Localization\Loc;
                 </button>
             </div>
             <div class="modal-body">
+                <div class="err_edit"></div>
                 <div class="form-group">
                     <label for="InputFIO_<?=$value['ID']?>">ФИО Отправителя <span style="color:red">*</span>  </label>
-                    <input required name="InputFIO_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>" value="<?=$value['NAME']?>" type="text" class="form-control"
+                    <input required name="InputFIO_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>"
+                           value="<?=$value['NAME']?>" type="text" class="form-control"
                            id="InputFIO_<?=$value['ID']?>">
                 </div>
                 <div class="form-group">
-                    <label for="InputPhone_<?=$value['ID']?>">Телефон отправителя <span style="color:red">*</span></label>
-                    <input required name="InputPhone_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>" value="<?=$value['PROPERTIES']['PHONE']['VALUE'];?>" type="text"
+                    <label for="InputPhone_<?=$value['ID']?>">Телефон отправителя <span style="color:red">*</span>
+                    </label>
+                    <input required name="InputPhone_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>"
+                           value="<?=$value['PROPERTIES']['PHONE']['VALUE'];?>" type="text"
                            class="form-control" id="InputPhone_<?=$value['ID']?>">
+                </div>
+                <div class="form-group form-group-sm">
+                    <input name="CityId_<?=$value['ID']?>" id="citycode_<?=$value['ID']?>"
+                           value="<?=$value['PROPERTIES']['CITY']['VALUE']?>" type="hidden"
+                           form="form-edit_<?=$value["ID"]?>">
+                    <label for="city_<?=$value['ID']?>" class="control-label">Город отправителя<span
+                                class="form-required">*</span></label>
+                    <input id="city_<?=$value['ID']?>" type="text" name="City_<?=$value['ID']?>"
+                         onclick="return auto_city_send('<?=$value['ID']?>')"
+                           class="form-control autocity ui-autocomplete-input"  required
+                           value="<?=$value['PROPERTIES']['CITY']['NAME']?>" form="form-edit_<?=$value["ID"]?>">
+                    <small>Начинайте вводить название города, выберете из выпадающего списка</small>
                 </div>
                 <div class="form-group">
                     <label for="InputAdr_<?=$value['ID']?>">Адрес отправителя <span style="color:red">*</span></label>
-                    <input required name="InputAdr_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>" value="<?=$value['PROPERTIES']['ADRESS']['VALUE'];?>"
+                    <input required name="InputAdr_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>"
+                           value="<?=$value['PROPERTIES']['ADRESS']['VALUE'];?>"
                            type="text" class="form-control" id="InputAdr_<?=$value['ID']?>">
                 </div>
-                <input id="form_submit_<?=$value['ID']?>" style="visibility: hidden" form="form-edit_<?=$value["ID"]?>" type="submit">
+                <input name="modalId" value="editBtn_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>"
+                       type="hidden">
+                <input id="form_submit_<?=$value['ID']?>" style="visibility: hidden" form="form-edit_<?=$value["ID"]?>"
+                       type="submit">
             </div>
 
             <div class="modal-footer">
@@ -157,6 +184,7 @@ use Bitrix\Main\Localization\Loc;
                     </div>
                 </td>
                 </tr>
+
                 <?php endforeach;?>
                 </tbody>
             </table>
