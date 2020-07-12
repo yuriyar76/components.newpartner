@@ -30,6 +30,7 @@ if($id_user && $USER->Authorize($id_user) ){
     $arResult['USER'] = $USER_CURRENT;
     $_SESSION['form_mail'] =  trim($USER_CURRENT['email']);
     $_SESSION['user_current'] =   $USER_CURRENT;
+
     /* массив отправителей дл€ выбора при оформлении новой за€вки*/
     $arFilter = [
         'PROPERTY_966' => $id_user,
@@ -45,19 +46,21 @@ if($id_user && $USER->Authorize($id_user) ){
     ];
 
     $arList = GetInfoArr(false, false, 114, $arSelect, $arFilter, false );
-     if(!empty($arList)){
+
+    if(!empty($arList)){
         foreach($arList as $key=>$value){
             $arResult['SENDERS'][$key] = [
                 "ID"   => $value['ID'],
                 "NAME" => trim($value['NAME']),
                 'PHONE' => $value['PROPERTIES']['PHONE']['VALUE'],
+                'CITY' => $value['PROPERTIES']['CITY']['VALUE'],
                 'ADRESS' => $value['PROPERTIES']['ADRESS']['VALUE'],
             ];
         }
-         $_SESSION['SENDERS'] =   $arResult['SENDERS'];
+         $_SESSION['SENDERS'] = $arResult['SENDERS'];
     }
 
-    /* массив получателей дл€ выбора при оформлении новой за€вки*/
+     /* массив получателей дл€ выбора при оформлении новой за€вки*/
     $arFilter = [
         'PROPERTY_966' => $id_user,
         'ACTIVE' => 'Y',
@@ -78,6 +81,7 @@ if($id_user && $USER->Authorize($id_user) ){
                 "ID"   => $value['ID'],
                 "NAME" => trim($value['NAME']),
                 'PHONE' => $value['PROPERTIES']['PHONE']['VALUE'],
+                'CITY' => $value['PROPERTIES']['CITY']['VALUE'],
                 'ADRESS' => $value['PROPERTIES']['ADRESS']['VALUE'],
             ];
         }
@@ -198,15 +202,15 @@ if($id_user && $USER->Authorize($id_user) ){
      }
     /* изменение справочника отправители-получатели */
     if($_GET['edit']==='Y'){
-         if(!empty($_POST['form_data'])&&$_POST['form_data'][6]['value']===$sessid){
-            $id_modal = trim(htmlspecialcharsEx($_POST['form_data'][5]['value']));
-            foreach($_POST['form_data'] as $key=>$value){
-                $key_arr = preg_replace('/_[0-9]+$/','',$_POST['form_data'][$key]['name']);
-                $id_modal = 'editBtn_'.preg_replace('/[a-z]+_{1}/i','',$_POST['form_data'][$key]['name']);
-                $arResult[$key_arr] = trim(htmlspecialcharsEx($value['value']));
+        $arResult = [];
+        $arRes = json_decode($_POST['form_data'], true);
+            if(!empty($arRes) && $arRes['sessid'] === $sessid){
+            $id_modal = trim(htmlspecialcharsEx($arRes['modalId']));
+            foreach($arRes as $key=>$value){
+                $key_arr = preg_replace('/_[0-9]+$/','', $key);
+                $arResult[$key_arr] = iconv('utf-8', 'windows-1251', $value);
             }
-            $arResult = arFromUtfToWin($arResult);
-
+            $id_modal = 'editBtn_'.preg_replace('/[a-z]+_{1}/i','', $key);
             $id_item = (int)$arResult['ID'];
             $el = new CIBlockElement;
             if(!empty($arResult['InputFIO'])){
@@ -216,7 +220,21 @@ if($id_user && $USER->Authorize($id_user) ){
                      if (!empty($arResult['InputAdr'])) {
                         $adr_new = $arResult['InputAdr'];
                         if (!empty($arResult['InputPhone'])) {
-                            $phone_new = $arResult['InputPhone'];
+
+                                if (!preg_match('/[+\s()\d-]{8,20}/', $arResult['InputPhone'])) {
+                                    $req = iconv('windows-1251', 'utf-8',
+                                        Loc::getMessage('ERR_ADD_PHONE_V'));
+                                    $request = [
+                                        'id' => $id_modal,
+                                        'messerr' => $req,
+                                        "change" => 0
+                                    ];
+                                    echo json_encode($request);
+                                    exit;
+                                }
+
+
+                                    $phone_new = $arResult['InputPhone'];
                             $arrUpdate = [
                                 969 => $phone_new,
                                 971 => $adr_new,
@@ -396,7 +414,12 @@ if($id_user && $USER->Authorize($id_user) ){
                 ]
             );
         }
+        $request = [
+            'id' => $id_item,
+        ];
+        echo json_encode($request);
         exit;
+
     }
     /* добавление нового отправител€-получател€*/
     if(($_GET['sender_add']==='Y' || $_GET['recipient_add']==='Y') && $_GET['newsender'] == $id_user){
@@ -409,7 +432,7 @@ if($id_user && $USER->Authorize($id_user) ){
             }
             $arResult = arFromUtfToWin($arResult);
             if(!empty($arResult['PHONE'])){
-               if( !preg_match('/[\+?\s?\(?\)?\d-]{10,20}/', $arResult['PHONE'])){
+               if( !preg_match('/[+\s()\d-]{8,20}/', $arResult['PHONE'])){
                    $req =  iconv('windows-1251', 'utf-8',
                        Loc::getMessage('ERR_ADD_PHONE_V'));
                    $request = [

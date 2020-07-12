@@ -80,8 +80,7 @@ use Bitrix\Main\Localization\Loc;
                     <div class="modal fade form-edit" data-backdrop="static" id="editBtn_<?=$value['ID']?>" tabindex="-1"
                          role="dialog" aria-labelledby="editBtn_<?=$value['ID']?> " aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-
+                            <div id='form-edit_<?=$value['ID']?>' class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title">Изменение данных получателя <?=$value['NAME']?></h5>
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -89,36 +88,41 @@ use Bitrix\Main\Localization\Loc;
                                     </button>
                                 </div>
                                 <div class="modal-body">
+                                    <div class="err_edit"></div>
                                     <div class="form-group">
-                                        <label for="InputFIO_<?=$value['ID']?>">ФИО Получателя <span style="color:red">*</span>  </label>
-                                        <input required name="InputFIO_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>" value="<?=$value['NAME']?>" type="text" class="form-control"
+                                        <label for="InputFIO_<?=$value['ID']?>">ФИО Получателя <span style="color:red">*</span> </label>
+                                        <input required name="InputFIO_<?=$value['ID']?>"
+                                               value="<?=$value['NAME']?>" type="text" class="form-control"
                                                id="InputFIO_<?=$value['ID']?>">
                                     </div>
                                     <div class="form-group">
                                         <label for="InputPhone_<?=$value['ID']?>">Телефон получателя <span style="color:red">*</span></label>
-                                        <input required name="InputPhone_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>" value="<?=$value['PROPERTIES']['PHONE']['VALUE'];?>" type="text"
+                                        <input required name="InputPhone_<?=$value['ID']?>"
+                                               value="<?=$value['PROPERTIES']['PHONE']['VALUE'];?>" type="text"
                                                class="form-control" id="InputPhone_<?=$value['ID']?>">
                                     </div>
                                     <div class="form-group form-group-sm">
                                         <input name="CityId_<?=$value['ID']?>" id="citycode_<?=$value['ID']?>"
-                                               type="hidden" form="form-edit_<?=$value["ID"]?>">
+                                               value="<?=$value['PROPERTIES']['CITY']['VALUE']?>" type="hidden"
+                                        >
                                         <label for="city_<?=$value['ID']?>" class="control-label">Город получателя<span
-                                                    class="form-required">*</span></label>
+                                                class="form-required">*</span></label>
                                         <input id="city_<?=$value['ID']?>" type="text" name="City_<?=$value['ID']?>"
                                                onclick="return auto_city_send('<?=$value['ID']?>')"
-                                               class="form-control autocity ui-autocomplete-input"  required value=""
-                                               form="form-edit_<?=$value["ID"]?>">
+                                               class="form-control autocity ui-autocomplete-input"  required
+                                               value="<?=$value['PROPERTIES']['CITY']['NAME']?>" >
                                         <small>Начинайте вводить название города, выберете из выпадающего списка</small>
                                     </div>
                                     <div class="form-group">
                                         <label for="InputAdr_<?=$value['ID']?>">Адрес получателя <span style="color:red">*</span></label>
-                                        <input required name="InputAdr_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>" value="<?=$value['PROPERTIES']['ADRESS']['VALUE'];?>"
+                                        <input required name="InputAdr_<?=$value['ID']?>"
+                                               value="<?=$value['PROPERTIES']['ADRESS']['VALUE'];?>"
                                                type="text" class="form-control" id="InputAdr_<?=$value['ID']?>">
                                     </div>
-                                    <input name="modalId" value="editBtn_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>"
+                                    <input name="modalId" value="editBtn_<?=$value['ID']?>"
                                            type="hidden">
-                                    <input id="form_submit_<?=$value['ID']?>" style="visibility: hidden" form="form-edit_<?=$value["ID"]?>"
-                                           type="submit">
+                                    <?=bitrix_sessid_post()?>
+                                    <input id="ID_<?=$value['ID']?>" name="ID_<?=$value['ID']?>" value="<?=$value['ID']?>" type="hidden">
                                 </div>
 
                                 <div class="modal-footer">
@@ -128,20 +132,16 @@ use Bitrix\Main\Localization\Loc;
                                         </span>
                                         <span class="text">Закрыть</span>
                                     </button>
-                                    <button  onclick="return editItem('form-edit_<?=$value["ID"]?>',
-                                            'form_submit_<?=$value["ID"]?>')"
+                                    <button  onclick="return editItem('form-edit_<?=$value["ID"]?>')"
                                              type="button"  class="btn btn-success btn-icon-split">
-                                        <span  class="icon text-white-50">
-                                          <i class="far fa-check-circle"></i>
-                                        </span>
+                                            <span  class="icon text-white-50">
+                                              <i class="far fa-check-circle"></i>
+                                            </span>
                                         <span class="text">Изменить</span>
                                     </button>
                                 </div>
-                                <form id="form-edit_<?=$value["ID"]?>" method="post" action="/tools/change_user_fl.php?edit=Y">
-                                    <?=bitrix_sessid_post()?>
-                                    <input name="ID_<?=$value['ID']?>" value="<?=$value['ID']?>" type="hidden">
-                                </form>
-                            </div>
+
+                                 </div>
                         </div>
                     </div>
                 </td>

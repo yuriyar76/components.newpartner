@@ -49,6 +49,7 @@ use Bitrix\Main\Localization\Loc;
                 </tfoot>
                 <tbody >
                 <?php foreach($arResult['LIST'] as $key=>$value):?>
+
                 <tr>
                     <td><?=$value['NAME']?></td>
                     <td>
@@ -60,8 +61,8 @@ use Bitrix\Main\Localization\Loc;
                     <td>
                         <?=$value['PROPERTIES']['ADRESS']['VALUE'];?>
                     </td>
-                        <td class="d-flex flex-row justify-content-center">
-                            <div>
+                        <td class="d-flex flex-row justify-content-start ">
+                            <div class="radio_default">
                                 <input id="radio_<?=$key?>" type="radio" name="DEFAULT"
 
                                        <?php if($value['PROPERTIES']['DEFAULT']['VALUE']==1){
@@ -71,86 +72,86 @@ use Bitrix\Main\Localization\Loc;
 
                                 <input type="hidden" name="ID_<?=$key?>" value="<?=$value['ID']?>">
                             </div>
+                            <div class="ban_default" <?=($value['PROPERTIES']['DEFAULT']['VALUE']==1)?"style='display: block'":"style='display: none'"?>
+                                id="ban_<?=$value['ID']?>">
+                                <span data-toggle="tooltip" data-placement="top"
+                                      title="Отменить выбор отправителя по умолчанию" style="cursor: pointer">
+                                    <i class="fas fa-ban"></i>
+                                </span>
+                            </div>
                        </td>
                        <td>
                             <i data-toggle="modal" data-target="#editBtn_<?=$value['ID']?>" style="color:#0f6fe5;
                             font-size: 20px; cursor:pointer"
                                class="fas fa-edit"></i>
-                            <!-- Modal -->
-
-    <div class="modal fade form-edit" data-backdrop="static" id="editBtn_<?=$value['ID']?>" tabindex="-1"
-         role="dialog" aria-labelledby="editBtn_<?=$value['ID']?> " aria-hidden="true">
+           <!-- Modal -->
+           <div class="modal fade form-edit" data-backdrop="static" id="editBtn_<?=$value['ID']?>" tabindex="-1"
+                role="dialog" aria-labelledby="editBtn_<?=$value['ID']?> " aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-             <div class="modal-content">
-
-            <div class="modal-header">
-                <h5 class="modal-title">Изменение данных отправителя <?=$value['NAME']?></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="err_edit"></div>
-                <div class="form-group">
-                    <label for="InputFIO_<?=$value['ID']?>">ФИО Отправителя <span style="color:red">*</span>  </label>
-                    <input required name="InputFIO_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>"
-                           value="<?=$value['NAME']?>" type="text" class="form-control"
-                           id="InputFIO_<?=$value['ID']?>">
+                <div id='form-edit_<?=$value['ID']?>' class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Изменение данных отправителя <?=$value['NAME']?></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label for="InputPhone_<?=$value['ID']?>">Телефон отправителя <span style="color:red">*</span>
-                    </label>
-                    <input required name="InputPhone_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>"
-                           value="<?=$value['PROPERTIES']['PHONE']['VALUE'];?>" type="text"
-                           class="form-control" id="InputPhone_<?=$value['ID']?>">
-                </div>
-                <div class="form-group form-group-sm">
-                    <input name="CityId_<?=$value['ID']?>" id="citycode_<?=$value['ID']?>"
-                           value="<?=$value['PROPERTIES']['CITY']['VALUE']?>" type="hidden"
-                           form="form-edit_<?=$value["ID"]?>">
-                    <label for="city_<?=$value['ID']?>" class="control-label">Город отправителя<span
-                                class="form-required">*</span></label>
-                    <input id="city_<?=$value['ID']?>" type="text" name="City_<?=$value['ID']?>"
-                         onclick="return auto_city_send('<?=$value['ID']?>')"
-                           class="form-control autocity ui-autocomplete-input"  required
-                           value="<?=$value['PROPERTIES']['CITY']['NAME']?>" form="form-edit_<?=$value["ID"]?>">
-                    <small>Начинайте вводить название города, выберете из выпадающего списка</small>
-                </div>
-                <div class="form-group">
-                    <label for="InputAdr_<?=$value['ID']?>">Адрес отправителя <span style="color:red">*</span></label>
-                    <input required name="InputAdr_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>"
-                           value="<?=$value['PROPERTIES']['ADRESS']['VALUE'];?>"
-                           type="text" class="form-control" id="InputAdr_<?=$value['ID']?>">
-                </div>
-                <input name="modalId" value="editBtn_<?=$value['ID']?>" form="form-edit_<?=$value["ID"]?>"
-                       type="hidden">
-                <input id="form_submit_<?=$value['ID']?>" style="visibility: hidden" form="form-edit_<?=$value["ID"]?>"
-                       type="submit">
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" data-dismiss="modal" class="btn btn-secondary btn-icon-split">
-                    <span class="icon text-white-50">
-                      <i class="fas fa-times-circle"></i>
-                    </span>
-                    <span class="text">Закрыть</span>
-                </button>
-                <button  onclick="return editItem('form-edit_<?=$value["ID"]?>', 'form_submit_<?=$value["ID"]?>')"
-                         type="button"  class="btn btn-success btn-icon-split">
-                    <span  class="icon text-white-50">
-                      <i class="far fa-check-circle"></i>
-                    </span>
-                    <span class="text">Изменить</span>
-                </button>
-            </div>
-            <form id="form-edit_<?=$value["ID"]?>" method="post" action="/tools/change_user_fl.php?edit=Y">
-                <?=bitrix_sessid_post()?>
-                <input name="ID_<?=$value['ID']?>" value="<?=$value['ID']?>" type="hidden">
-            </form>
-        </div>
-    </div>
+                  <div class="modal-body">
+                    <div class="err_edit"></div>
+                    <div class="form-group">
+                        <label for="InputFIO_<?=$value['ID']?>">ФИО Отправителя <span style="color:red">*</span>  </label>
+                        <input required name="InputFIO_<?=$value['ID']?>"
+                               value="<?=$value['NAME']?>" type="text" class="form-control"
+                               id="InputFIO_<?=$value['ID']?>">
                     </div>
-                </td>
+                    <div class="form-group">
+                        <label for="InputPhone_<?=$value['ID']?>">Телефон отправителя <span style="color:red">*</span>
+                        </label>
+                        <input required name="InputPhone_<?=$value['ID']?>"
+                               value="<?=$value['PROPERTIES']['PHONE']['VALUE'];?>" type="text"
+                               class="form-control" id="InputPhone_<?=$value['ID']?>">
+                    </div>
+                    <div class="form-group form-group-sm">
+                        <input name="CityId_<?=$value['ID']?>" id="citycode_<?=$value['ID']?>"
+                               value="<?=$value['PROPERTIES']['CITY']['VALUE']?>" type="hidden"
+                               >
+                        <label for="city_<?=$value['ID']?>" class="control-label">Город отправителя<span
+                                    class="form-required">*</span></label>
+                        <input id="city_<?=$value['ID']?>" type="text" name="City_<?=$value['ID']?>"
+                             onclick="return auto_city_send('<?=$value['ID']?>')"
+                               class="form-control autocity ui-autocomplete-input"  required
+                               value="<?=$value['PROPERTIES']['CITY']['NAME']?>" >
+                        <small>Начинайте вводить название города, выберете из выпадающего списка</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="InputAdr_<?=$value['ID']?>">Адрес отправителя <span style="color:red">*</span></label>
+                        <input required name="InputAdr_<?=$value['ID']?>"
+                               value="<?=$value['PROPERTIES']['ADRESS']['VALUE'];?>"
+                               type="text" class="form-control" id="InputAdr_<?=$value['ID']?>">
+                    </div>
+                    <input id="modalId_<?=$value['ID']?>" name="modalId" value="editBtn_<?=$value['ID']?>" type="hidden">
+                      <?=bitrix_sessid_post()?>
+                      <input id="ID_<?=$value['ID']?>" name="ID_<?=$value['ID']?>" value="<?=$value['ID']?>" type="hidden">
+                </div>
+
+                  <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-secondary btn-icon-split">
+                        <span class="icon text-white-50">
+                          <i class="fas fa-times-circle"></i>
+                        </span>
+                        <span class="text">Закрыть</span>
+                    </button>
+                    <button  onclick="return editItem('form-edit_<?=$value["ID"]?>')"
+                             type="button"  class="btn btn-success btn-icon-split">
+                        <span  class="icon text-white-50">
+                          <i class="far fa-check-circle"></i>
+                        </span>
+                        <span class="text">Изменить</span>
+                    </button>
+                </div>
+                </div>
+            </div>
+          </div>
+                       </td>
                 <td>
                     <i data-toggle="modal" data-target="#trashBtn_<?=$value['ID']?>"
                        style="color:#710404; font-size: 20px; cursor:pointer" class="fas fa-trash-alt"></i>
@@ -184,7 +185,6 @@ use Bitrix\Main\Localization\Loc;
                     </div>
                 </td>
                 </tr>
-
                 <?php endforeach;?>
                 </tbody>
             </table>

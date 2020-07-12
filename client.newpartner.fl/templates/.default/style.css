@@ -1,3 +1,10 @@
 .get_pods_fl{
     cursor: pointer;
 }
+.ban_default{
+    margin-left: 30px;
+}
+
+.radio_default{
+    margin-left: 40px;
+}
